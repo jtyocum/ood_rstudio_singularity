@@ -1,0 +1,27 @@
+# Ensure that the guest is the same OS type as the compute hosts that it will run on
+# Here we use CentOS 7
+Bootstrap: docker
+From: ubuntu:22.04
+
+%labels
+  Maintainer OSC Gateways
+
+%help
+This will run RStudio Server which must be mounted with dependencies into the container
+
+%post
+  apt-get update; apt-get -y install tzdata
+
+%apprun rserver
+  if ! [ "$USER_PATH" = "" ]; then
+    export PATH="$USER_PATH"
+  fi
+
+  exec rserver "${@}"
+
+%runscript
+  if ! [ "$USER_PATH" = "" ]; then
+    export PATH="$USER_PATH"
+  fi
+
+  exec rserver "${@}"

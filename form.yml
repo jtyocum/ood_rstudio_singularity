@@ -1,5 +1,5 @@
 ---
-cluster: ""
+cluster: "testcluster"
 form:
   - bc_account
   - bc_queue

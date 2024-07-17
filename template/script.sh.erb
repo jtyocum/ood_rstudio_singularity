@@ -4,9 +4,9 @@
 setup_env () {
   # Additional environment which could be moved into a module
   # Change these to suit
-  export RSTUDIO_SERVER_IMAGE="/apps/rserver-launcher-centos7.simg"
+  export RSTUDIO_SERVER_IMAGE="/apps/rserver-launcher-ubuntu-2204.sif"
   export SINGULARITY_BINDPATH="/etc,/media,/mnt,/opt,/srv,/usr,/var"
-  export PATH="$PATH:/usr/lib/rstudio-server/bin"
+  export PATH="$PATH:/usr/bin:/usr/lib/rstudio-server/bin"
   export SINGULARITYENV_PATH="$PATH"
   # In Singularity 3.5.x it became necessary to explicitly pass LD_LIBRARY_PATH
   # to the singularity process
@@ -47,14 +47,21 @@ cd "${HOME}"
 export TMPDIR="$(mktemp -d)"
 
 mkdir -p "$TMPDIR/rstudio-server"
-python -c 'from uuid import uuid4; print(uuid4())' > "$TMPDIR/rstudio-server/secure-cookie-key"
+mkdir -p "$TMPDIR/run_rstudio-server"
+mkdir -p "$TMPDIR/etc_rstudio"
+python3 -c 'from uuid import uuid4; print(uuid4())' > "$TMPDIR/rstudio-server/secure-cookie-key"
 chmod 0600 "$TMPDIR/rstudio-server/secure-cookie-key"
+echo "directory=${TMPDIR}/etc_rstudio" > "$TMPDIR/etc_rstudio/database.conf"
 
 set -x
 # Launch the RStudio Server
 echo "Starting up rserver..."
 
-singularity run -B "$TMPDIR:/tmp" "$RSTUDIO_SERVER_IMAGE" \
+singularity run -B /run/systemd/resolve:/run/systemd/resolve -B "$TMPDIR:/tmp" "$RSTUDIO_SERVER_IMAGE" \
+ --server-user "$(whoami)" \
+ --server-pid-file "/tmp/run_rstudio-server/rstudio-server.pid" \
+ --server-data-dir "/tmp/run_rstudio-server" \
+ --database-config-file "/tmp/etc_rstudio/database.conf" \
  --www-port "${port}" \
  --auth-none 0 \
  --auth-pam-helper-path "${RSTUDIO_AUTH}" \
